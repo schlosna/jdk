@@ -305,7 +305,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
 
     private int runAPI(PrintWriter pw) throws IOException {
         Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.ENGLISH);
+        Locale.setDefault(Locale.US);
         try {
             jdtool = (JavadocTool) ToolProvider.getSystemDocumentationTool();
             jdtool = new JavadocTool();
@@ -346,7 +346,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
 
     private int runCommand(PrintWriter pw) {
         Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.ENGLISH);
+        Locale.setDefault(Locale.US);
 
         List<String> args = getAllArgs();
         String[] argsArray = args.toArray(new String[args.size()]);

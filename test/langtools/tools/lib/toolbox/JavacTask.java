@@ -339,7 +339,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
 
     private int runAPI(PrintWriter pw) throws IOException {
         Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.ENGLISH);
+        Locale.setDefault(Locale.US);
         try {
 //                if (compiler == null) {
                 // TODO: allow this to be set externally
@@ -389,7 +389,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
 
     private int runCommand(PrintWriter pw) {
         Locale defaultLocale = Locale.getDefault();
-        Locale.setDefault(Locale.ENGLISH);
+        Locale.setDefault(Locale.US);
 
         List<String> args = getAllArgs();
         String[] argsArray = args.toArray(new String[args.size()]);
