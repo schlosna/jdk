@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class RuntimeArguments {
         Stream<String> options = Stream.concat(args.stream(),
             Stream.of("-classpath", TEST_CLASSES, "RuntimeArguments"));
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilderWithLocale(false,
             Stream.concat(options, expected.stream())
                   .toArray(String[]::new)
         );

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -296,6 +291,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
 
     /**
      * Calls the compiler with the arguments as currently configured.
+     * The default locale will set to US to produce english output.
      * @return a Result object indicating the outcome of the compilation
      * and the content of any output written to stdout, stderr, or the
      * main stream by the compiler.
@@ -342,6 +338,8 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     private int runAPI(PrintWriter pw) throws IOException {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
         try {
 //                if (compiler == null) {
                 // TODO: allow this to be set externally
@@ -379,6 +377,7 @@ public class JavacTask extends AbstractTask<JavacTask> {
         } finally {
             if (internalFileManager != null)
                 internalFileManager.close();
+            Locale.setDefault(defaultLocale);
         }
     }
 
@@ -389,15 +388,24 @@ public class JavacTask extends AbstractTask<JavacTask> {
     }
 
     private int runCommand(PrintWriter pw) {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
+
         List<String> args = getAllArgs();
         String[] argsArray = args.toArray(new String[args.size()]);
-        return com.sun.tools.javac.Main.compile(argsArray, pw);
+        int exitCode = com.sun.tools.javac.Main.compile(argsArray, pw);
+        Locale.setDefault(defaultLocale);
+        return exitCode;
     }
 
     private Task.Result runExec() {
         List<String> args = new ArrayList<>();
         Path javac = toolBox.getJDKTool("javac");
         args.add(javac.toString());
+
+        args.add("-J-Duser.language=en");
+        args.add("-J-Duser.country=US");
+
         if (includeStandardOptions) {
             args.addAll(toolBox.split(System.getProperty("test.tool.vm.opts"), " +"));
             args.addAll(toolBox.split(System.getProperty("test.compiler.opts"), " +"));

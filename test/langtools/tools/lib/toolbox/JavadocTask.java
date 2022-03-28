@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,12 +28,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -269,6 +264,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
 
     /**
      * Calls the javadoc tool with the arguments as currently configured.
+     * The default locale will set to US to produce english output.
      * @return a Result object indicating the outcome of the execution
      * and the content of any output written to stdout, stderr, or the
      * main stream by the tool.
@@ -308,6 +304,8 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
     }
 
     private int runAPI(PrintWriter pw) throws IOException {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
         try {
             jdtool = (JavadocTool) ToolProvider.getSystemDocumentationTool();
             jdtool = new JavadocTool();
@@ -336,6 +334,7 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
         } finally {
             if (internalFileManager != null)
                 internalFileManager.close();
+            Locale.setDefault(defaultLocale);
         }
     }
 
@@ -346,15 +345,24 @@ public class JavadocTask extends AbstractTask<JavadocTask> {
     }
 
     private int runCommand(PrintWriter pw) {
+        Locale defaultLocale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
+
         List<String> args = getAllArgs();
         String[] argsArray = args.toArray(new String[args.size()]);
-        return jdk.javadoc.internal.tool.Main.execute(argsArray, pw);
+        int exitCode = jdk.javadoc.internal.tool.Main.execute(argsArray, pw);
+        Locale.setDefault(defaultLocale);
+        return exitCode;
     }
 
     private Task.Result runExec() {
         List<String> args = new ArrayList<>();
         Path javadoc = toolBox.getJDKTool("javadoc");
         args.add(javadoc.toString());
+
+        args.add(1,"-J-Duser.language=en");
+        args.add(2,"-J-Duser.country=US");
+
         if (includeStandardOptions) {
             args.addAll(toolBox.split(System.getProperty("test.tool.vm.opts"), " +"));
         }

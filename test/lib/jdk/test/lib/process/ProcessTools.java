@@ -289,15 +289,25 @@ public final class ProcessTools {
 
     /**
      * Create ProcessBuilder using the java launcher from the jdk to be tested.
+     * The created jvm default locale will set to US to produce english output.
      *
      * @param command Arguments to pass to the java command.
      * @return The ProcessBuilder instance representing the java command.
      */
     public static ProcessBuilder createJavaProcessBuilder(String... command) {
+        return createJavaProcessBuilderWithLocale(true,command);
+    }
+
+    public static ProcessBuilder createJavaProcessBuilderWithLocale(boolean setUSLocale,String... command) {
         String javapath = JDKToolFinder.getJDKTool("java");
 
         ArrayList<String> args = new ArrayList<>();
         args.add(javapath);
+
+        if (setUSLocale) {
+            args.add("-Duser.language=en");
+            args.add("-Duser.country=US");
+        }
 
         args.add("-cp");
         args.add(System.getProperty("java.class.path"));
