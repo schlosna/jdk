@@ -356,7 +356,7 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        // precompute length
+        // precompute length, then construct char array for String
         int length = 0;
         boolean prefixClassLoader = false;
         boolean prefixModule = false;
@@ -364,7 +364,7 @@ public final class StackTraceElement implements java.io.Serializable {
 
         if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
             prefixClassLoader = true;
-            length += classLoaderName.length() + 1;
+            length += classLoaderName.length() + 1 /* '/' */;
         }
 
         if (moduleName != null && !moduleName.isEmpty()) {
@@ -372,55 +372,56 @@ public final class StackTraceElement implements java.io.Serializable {
             length += moduleName.length();
             if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
                 prefixModuleVersion = true;
-                length += 1 + moduleVersion.length(); // @moduleVersion
+                length += 1  /* '@' */ + moduleVersion.length();
             }
         }
 
-        length += methodName.length() + 2; // .methodName(
+        length += declaringClass.length() + methodName.length() + 2; // class.methodName(
         if (isNativeMethod()) {
             length += "Native Method".length();
-        }
-        if (fileName == null) {
-            length += "Unknown Source".length();
         } else {
-            length += fileName.length() + 1;
+            length += Objects.requireNonNullElse(fileName, "Unknown Source").length();
         }
         if (lineNumber >= 0) {
-            length += Integer.stringSize(lineNumber);
+            length += 1 /* ':' */ + Integer.stringSize(lineNumber);
         }
-        length++; // trailing ')'
 
-        StringBuilder sb = new StringBuilder(length);
+        char[] chars = new char[length + 1 /* ')' */ ];
+        int index = 0;
+
         if (prefixClassLoader) {
-            sb.append(classLoaderName).append('/');
+            index = appendChars(chars, index, classLoaderName);
+            chars[index++] = '/';
         }
         if (prefixModule) {
-            sb.append(moduleName);
+            index = appendChars(chars, index, moduleName);
             if (prefixModuleVersion) {
-                sb.append('@').append(moduleVersion);
+                chars[index++] = '@';
+                index = appendChars(chars, index, moduleVersion);
             }
         }
-        if (prefixClassLoader || prefixModule) {
-            sb.append(declaringClass);
-        } else {
-            sb.append('/').append(declaringClass);
-        }
 
-        sb.append('.').append(methodName).append('(');
+        index = appendChars(chars, index, declaringClass);
+        chars[index++] = '.';
+        index = appendChars(chars, index, methodName);
+        chars[index++] = '(';
         if (isNativeMethod()) {
-            sb.append("Native Method");
+            index = appendChars(chars, index, "Native Method");
         } else if (fileName != null && lineNumber >= 0) {
-            sb.append(fileName)
-                    .append(':')
-                    .append(lineNumber);
-        } else if (fileName != null) {
-            sb.append(fileName);
+            index = appendChars(chars, index, fileName);
+            chars[index++] = ':';
+            index = appendChars(chars, index, Integer.toString(lineNumber));
         } else {
-            sb.append("Unknown Source");
+            index = appendChars(chars, index, Objects.requireNonNullElse(fileName, "Unknown Source"));
         }
-        sb.append(')');
+        chars[index] = ')';
 
-        return sb.toString();
+        return new String(chars, 0, length);
+    }
+
+    private static int appendChars(char[] buffer, int index, String value) {
+        value.getChars(0, value.length(), buffer, index);
+        return index + value.length();
     }
 
     /**
