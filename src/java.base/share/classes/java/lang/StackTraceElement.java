@@ -356,72 +356,149 @@ public final class StackTraceElement implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        // precompute length, then construct char array for String
-        int length = 0;
-        boolean prefixClassLoader = false;
-        boolean prefixModule = false;
-        boolean prefixModuleVersion = false;
+        boolean includeClassLoaderName =
+                !dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty();
+        boolean includeModuleName = moduleName != null && !moduleName.isEmpty();
+        // depends on includeModuleName
+        boolean includeModuleVersion =
+                includeModuleName && !dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty();
 
-        if (!dropClassLoaderName() && classLoaderName != null && !classLoaderName.isEmpty()) {
-            prefixClassLoader = true;
-            length += classLoaderName.length() + 1 /* '/' */;
-        }
-
-        if (moduleName != null && !moduleName.isEmpty()) {
-            prefixModule = true;
-            length += moduleName.length();
-            if (!dropModuleVersion() && moduleVersion != null && !moduleVersion.isEmpty()) {
-                prefixModuleVersion = true;
-                length += 1  /* '@' */ + moduleVersion.length();
+        if (includeClassLoaderName) {
+            if (includeModuleVersion) {
+                if (fileName != null && lineNumber >= 0) {
+                    return classLoaderName
+                            + '/'
+                            + moduleName
+                            + '@'
+                            + moduleVersion
+                            + '/'
+                            + declaringClass
+                            + '.'
+                            + methodName
+                            + '('
+                            + fileName
+                            + ':'
+                            + lineNumber
+                            + ')';
+                }
+                return classLoaderName
+                        + '/'
+                        + moduleName
+                        + '@'
+                        + moduleVersion
+                        + '/'
+                        + declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
+            } else if (includeModuleName) {
+                if (fileName != null && lineNumber >= 0) {
+                    return classLoaderName
+                            + '/'
+                            + moduleName
+                            + '/'
+                            + declaringClass
+                            + '.'
+                            + methodName
+                            + '('
+                            + fileName
+                            + ':'
+                            + lineNumber
+                            + ')';
+                }
+                return classLoaderName
+                        + '/'
+                        + moduleName
+                        + '/'
+                        + declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
+            } else {
+                if (fileName != null && lineNumber >= 0) {
+                    return classLoaderName
+                            + '/'
+                            + declaringClass
+                            + '.'
+                            + methodName
+                            + '('
+                            + fileName
+                            + ':'
+                            + lineNumber
+                            + ')';
+                }
+                return classLoaderName
+                        + '/'
+                        + declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
+            }
+        } else {
+            if (includeModuleVersion) {
+                if (fileName != null && lineNumber >= 0) {
+                    return moduleName
+                            + '@'
+                            + moduleVersion
+                            + '/'
+                            + declaringClass
+                            + '.'
+                            + methodName
+                            + '('
+                            + fileName
+                            + ':'
+                            + lineNumber
+                            + ')';
+                }
+                return moduleName
+                        + '@'
+                        + moduleVersion
+                        + '/'
+                        + declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
+            } else if (includeModuleName) {
+                if (fileName != null && lineNumber >= 0) {
+                    return moduleName
+                            + '/'
+                            + declaringClass
+                            + '.'
+                            + methodName
+                            + '('
+                            + fileName
+                            + ':'
+                            + lineNumber
+                            + ')';
+                }
+                return moduleName
+                        + '/'
+                        + declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
+            } else {
+                if (fileName != null && lineNumber >= 0) {
+                    return declaringClass + '.' + methodName + '(' + fileName + ':' + lineNumber + ')';
+                }
+                return declaringClass
+                        + '.'
+                        + methodName
+                        + '('
+                        + (isNativeMethod() ? "Native Method" : (fileName == null ? "Unknown Source" : fileName))
+                        + ')';
             }
         }
-
-        length += declaringClass.length() + methodName.length() + 2; // class.methodName(
-        if (isNativeMethod()) {
-            length += "Native Method".length();
-        } else {
-            length += Objects.requireNonNullElse(fileName, "Unknown Source").length();
-        }
-        if (lineNumber >= 0) {
-            length += 1 /* ':' */ + Integer.stringSize(lineNumber);
-        }
-
-        char[] chars = new char[length + 1 /* ')' */ ];
-        int index = 0;
-
-        if (prefixClassLoader) {
-            index = appendChars(chars, index, classLoaderName);
-            chars[index++] = '/';
-        }
-        if (prefixModule) {
-            index = appendChars(chars, index, moduleName);
-            if (prefixModuleVersion) {
-                chars[index++] = '@';
-                index = appendChars(chars, index, moduleVersion);
-            }
-        }
-
-        index = appendChars(chars, index, declaringClass);
-        chars[index++] = '.';
-        index = appendChars(chars, index, methodName);
-        chars[index++] = '(';
-        if (isNativeMethod()) {
-            index = appendChars(chars, index, "Native Method");
-        } else if (fileName != null && lineNumber >= 0) {
-            index = appendChars(chars, index, fileName);
-            chars[index++] = ':';
-            index = appendChars(chars, index, Integer.toString(lineNumber));
-        } else {
-            index = appendChars(chars, index, Objects.requireNonNullElse(fileName, "Unknown Source"));
-        }
-        chars[index] = ')';
-
-        return new String(chars, 0, length);
-    }
-
-    private static int appendChars(char[] buffer, int index, String value) {
-        value.getChars(0, value.length(), buffer, index);
-        return index + value.length();
     }
 
     /**
